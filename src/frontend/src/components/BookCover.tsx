@@ -22,17 +22,17 @@ export function BookCover({ onComplete }: BookCoverProps) {
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Wait 3s on cover, then start the book-open animation
+    const showTimer = setTimeout(() => {
       setAnimating(true);
+      // After animation completes (1.2s), hide cover
+      const doneTimer = setTimeout(() => {
+        onComplete();
+      }, 1300);
+      return () => clearTimeout(doneTimer);
     }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleAnimationEnd = () => {
-    if (animating) {
-      onComplete();
-    }
-  };
+    return () => clearTimeout(showTimer);
+  }, [onComplete]);
 
   return (
     <div
@@ -42,7 +42,6 @@ export function BookCover({ onComplete }: BookCoverProps) {
         transformOrigin: "left center",
         backfaceVisibility: "hidden",
       }}
-      onAnimationEnd={handleAnimationEnd}
     >
       <div
         className="absolute inset-0"

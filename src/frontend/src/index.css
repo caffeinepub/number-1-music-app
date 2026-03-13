@@ -229,58 +229,114 @@ body {
   }
 }
 
-/* EQ Slider custom styles */
-input[type="range"].eq-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  writing-mode: vertical-lr;
-  direction: rtl;
-  width: 36px;
+/* ============================================================
+   EQ VERTICAL SLIDERS
+   The sliders are rotated -90deg so "right" in CSS = "up" visually.
+   --eq-pct  : thumb position 0–100% (50% = 0dB center)
+   --eq-center: always 50% (the 0dB line)
+   The track fill lights up gold between center and the thumb,
+   whether the user is boosting (thumb > 50%) or cutting (thumb < 50%).
+   ============================================================ */
+
+.eq-slider-container {
+  position: relative;
+  width: 40px;
   height: 160px;
-  background: transparent;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-input[type="range"].eq-slider::-webkit-slider-runnable-track {
-  width: 6px;
+/* Center tick mark visible at the physical mid-point of the container.
+   Because the slider is rotated -90deg, the "center" of the track
+   maps to the vertical center of the container. */
+.eq-center-tick {
+  position: absolute;
+  /* sits at the vertical center of the container */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* 2px wide, 10px tall (will appear horizontal after the slider's rotation context) */
+  width: 2px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 1px;
+  box-shadow: 0 0 4px rgba(255, 215, 0, 0.6);
+  pointer-events: none;
+  z-index: 2;
+}
+
+input[type="range"].eq-vert-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 160px;
+  height: 6px;
+  background: transparent;
+  cursor: pointer;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+  position: absolute;
+  z-index: 3;
+}
+
+/* WebKit track — dynamic gold fill between center (50%) and thumb */
+input[type="range"].eq-vert-slider::-webkit-slider-runnable-track {
+  height: 6px;
   background: linear-gradient(
-    to top,
-    #ffd700 var(--fill-pct, 50%),
-    #0a1e3d var(--fill-pct, 50%)
+    to right,
+    #0a1e3d 0%,
+    #0a1e3d min(50%, var(--eq-pct, 50%)),
+    #ffd700 min(50%, var(--eq-pct, 50%)),
+    #ffd700 max(50%, var(--eq-pct, 50%)),
+    #0a1e3d max(50%, var(--eq-pct, 50%)),
+    #0a1e3d 100%
   );
   border-radius: 3px;
   border: 1px solid #1a3a6b;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
 }
 
-input[type="range"].eq-slider::-webkit-slider-thumb {
+/* Gold glowing thumb */
+input[type="range"].eq-vert-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #ffd700;
-  box-shadow: 0 0 8px #ffd700, 0 0 16px rgba(255, 215, 0, 0.5);
+  background: radial-gradient(circle, #ffe44d 0%, #ffd700 60%, #cc9900 100%);
+  box-shadow: 0 0 10px #ffd700, 0 0 20px rgba(255, 215, 0, 0.6);
   cursor: pointer;
-  margin-left: -7px;
+  margin-top: -8px;
   transition: box-shadow 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
-input[type="range"].eq-slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 12px #ffd700, 0 0 24px #ffd700;
+input[type="range"].eq-vert-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 16px #ffd700, 0 0 32px #ffd700, 0 0 48px
+    rgba(255, 215, 0, 0.4);
 }
 
-input[type="range"].eq-slider::-moz-range-track {
-  width: 6px;
-  background: #0a1e3d;
+/* Firefox track */
+input[type="range"].eq-vert-slider::-moz-range-track {
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    #0a1e3d 0%,
+    #0a1e3d min(50%, var(--eq-pct, 50%)),
+    #ffd700 min(50%, var(--eq-pct, 50%)),
+    #ffd700 max(50%, var(--eq-pct, 50%)),
+    #0a1e3d max(50%, var(--eq-pct, 50%)),
+    #0a1e3d 100%
+  );
   border-radius: 3px;
 }
 
-input[type="range"].eq-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+input[type="range"].eq-vert-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #ffd700;
-  box-shadow: 0 0 8px #ffd700;
+  background: radial-gradient(circle, #ffe44d 0%, #ffd700 60%, #cc9900 100%);
+  box-shadow: 0 0 10px #ffd700;
   cursor: pointer;
   border: none;
 }

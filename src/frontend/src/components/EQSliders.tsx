@@ -6,12 +6,12 @@ interface EQSlidersProps {
 }
 
 const bands = [
-  { key: "bass", label: "BASS" },
-  { key: "midLow", label: "MID-LOW" },
-  { key: "mid", label: "MID" },
-  { key: "midHigh", label: "MID-HIGH" },
-  { key: "treble", label: "TREBLE" },
-  { key: "presence", label: "PRESENCE" },
+  { key: "bass", label: "60Hz" },
+  { key: "midLow", label: "250Hz" },
+  { key: "mid", label: "1kHz" },
+  { key: "midHigh", label: "4kHz" },
+  { key: "treble", label: "8kHz" },
+  { key: "presence", label: "16kHz" },
 ];
 
 const ocids: Record<string, string> = {
@@ -39,7 +39,7 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
         background: "linear-gradient(135deg, #080f22 0%, #050d1f 100%)",
         border: "2px solid #1a3a6b",
         borderRadius: 12,
-        padding: "20px 24px",
+        padding: "20px 16px",
         opacity: isActive ? 1 : 0.5,
         pointerEvents: isActive ? "auto" : "none",
         transition: "opacity 0.4s",
@@ -52,24 +52,38 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
           fontWeight: 700,
           color: "#FFD700",
           letterSpacing: "0.2em",
-          marginBottom: 20,
+          marginBottom: 8,
           textAlign: "center",
         }}
       >
-        ⚙ EQUALIZER
+        ⚙ 6-BAND EQUALIZER
+      </div>
+      <div
+        style={{
+          fontFamily: "Rajdhani, sans-serif",
+          fontSize: 10,
+          color: "rgba(255,215,0,0.5)",
+          textAlign: "center",
+          marginBottom: 16,
+          letterSpacing: "0.15em",
+        }}
+      >
+        VERTICAL · DRAG UP TO BOOST · +20dB MAX
       </div>
 
       <div
         style={{
           display: "flex",
-          gap: 16,
+          gap: 8,
           justifyContent: "center",
-          alignItems: "flex-start",
+          alignItems: "flex-end",
         }}
       >
         {bands.map((band) => {
           const val = values[band.key];
-          const fillPct = ((val + 12) / 24) * 100;
+          // Convert gain (-20 to +20 dB) to a 0–100% position
+          const pct = ((val + 20) / 40) * 100;
+
           return (
             <div
               key={band.key}
@@ -84,38 +98,35 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
               <div
                 style={{
                   fontFamily: "Orbitron, sans-serif",
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: 700,
-                  color: val === 0 ? "rgba(255,215,0,0.5)" : "#FFD700",
+                  color: val === 0 ? "rgba(255,215,0,0.4)" : "#FFD700",
                   textShadow: val !== 0 ? "0 0 8px #FFD700" : "none",
-                  minWidth: 50,
                   textAlign: "center",
+                  minWidth: 40,
                 }}
               >
                 {val >= 0 ? "+" : ""}
-                {val.toFixed(1)} dB
+                {val.toFixed(1)}
               </div>
 
-              {/* Vertical slider */}
-              <div
-                style={{
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              {/* Vertical slider container */}
+              <div className="eq-slider-container">
+                {/* Center (0dB) tick mark */}
+                <div className="eq-center-tick" />
                 <input
                   type="range"
-                  className="eq-slider"
-                  min={-12}
-                  max={12}
+                  className="eq-vert-slider"
+                  min={-20}
+                  max={20}
                   step={0.5}
                   value={val}
                   data-ocid={ocids[band.key]}
                   style={
                     {
-                      "--fill-pct": `${fillPct}%`,
+                      // Dynamic fill: pct = thumb position, 50 = center (0dB)
+                      "--eq-pct": `${pct}%`,
+                      "--eq-center": "50%",
                     } as React.CSSProperties
                   }
                   onChange={(e) =>
@@ -128,12 +139,12 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
               <div
                 style={{
                   fontFamily: "Rajdhani, sans-serif",
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: 700,
                   color: "rgba(255,215,0,0.7)",
-                  letterSpacing: "0.1em",
+                  letterSpacing: "0.05em",
                   textAlign: "center",
-                  maxWidth: 50,
+                  minWidth: 40,
                 }}
               >
                 {band.label}

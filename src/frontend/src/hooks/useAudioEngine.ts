@@ -2,12 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface AudioEngineReturn {
   analyserNode: AnalyserNode | null;
+  compressorNode: DynamicsCompressorNode | null;
   loadFile: (file: File) => Promise<void>;
   play: () => void;
   pause: () => void;
   seek: (time: number) => void;
   setVolume: (v: number) => void;
   setFilterGain: (band: string, gainDb: number) => void;
+  setBoosterGain: (v: number) => void;
+  setCompressorThreshold: (v: number) => void;
+  setPan: (v: number) => void;
   currentTime: number;
   duration: number;
   isPlaying: boolean;
@@ -19,8 +23,11 @@ export function useAudioEngine(): AudioEngineReturn {
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const boosterGainRef = useRef<GainNode | null>(null);
   const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const compressorRef = useRef<DynamicsCompressorNode | null>(null);
+  const pannerRef = useRef<StereoPannerNode | null>(null);
   const startTimeRef = useRef<number>(0);
   const pauseOffsetRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,6 +50,10 @@ export function useAudioEngine(): AudioEngineReturn {
     const gain = ctx.createGain();
     gain.gain.value = 1.0;
     gainNodeRef.current = gain;
+
+    const booster = ctx.createGain();
+    booster.gain.value = 1.0;
+    boosterGainRef.current = booster;
 
     const filterDefs: Array<{
       key: string;
@@ -69,16 +80,31 @@ export function useAudioEngine(): AudioEngineReturn {
       },
     );
 
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -24;
+    compressor.knee.value = 30;
+    compressor.ratio.value = 12;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.25;
+    compressorRef.current = compressor;
+
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = 0;
+    pannerRef.current = panner;
+
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
     analyserRef.current = analyser;
 
-    // Chain: gain -> filter1 -> ... -> filter6 -> analyser -> destination
-    gain.connect(filters[0]);
+    // Chain: gain -> booster -> filter1...filter6 -> compressor -> panner -> analyser -> destination
+    gain.connect(booster);
+    booster.connect(filters[0]);
     for (let i = 0; i < filters.length - 1; i++) {
       filters[i].connect(filters[i + 1]);
     }
-    filters[filters.length - 1].connect(analyser);
+    filters[filters.length - 1].connect(compressor);
+    compressor.connect(panner);
+    panner.connect(analyser);
     analyser.connect(ctx.destination);
   }, [getOrCreateContext]);
 
@@ -188,35 +214,45 @@ export function useAudioEngine(): AudioEngineReturn {
   );
 
   const setVolume = useCallback((v: number) => {
-    if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = v;
-    }
+    if (gainNodeRef.current) gainNodeRef.current.gain.value = v;
   }, []);
 
   const setFilterGain = useCallback((band: string, gainDb: number) => {
     const f = filtersRef.current[band];
-    if (f) {
-      f.gain.value = gainDb;
-    }
+    if (f) f.gain.value = gainDb;
+  }, []);
+
+  const setBoosterGain = useCallback((v: number) => {
+    if (boosterGainRef.current) boosterGainRef.current.gain.value = v;
+  }, []);
+
+  const setCompressorThreshold = useCallback((v: number) => {
+    if (compressorRef.current) compressorRef.current.threshold.value = v;
+  }, []);
+
+  const setPan = useCallback((v: number) => {
+    if (pannerRef.current) pannerRef.current.pan.value = v;
   }, []);
 
   useEffect(() => {
     return () => {
       stopInterval();
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close();
-      }
+      if (audioCtxRef.current) audioCtxRef.current.close();
     };
   }, [stopInterval]);
 
   return {
     analyserNode: analyserRef.current,
+    compressorNode: compressorRef.current,
     loadFile,
     play,
     pause,
     seek,
     setVolume,
     setFilterGain,
+    setBoosterGain,
+    setCompressorThreshold,
+    setPan,
     currentTime,
     duration,
     isPlaying,
