@@ -1,7 +1,13 @@
+import { useState } from "react";
+
 interface SoundEnginePanelProps {
   name: string;
-  engineType: string;
+  engineType: "bass" | "mid" | "high" | "presence";
   isActive: boolean;
+  onGainChange?: (
+    engine: "bass" | "mid" | "high" | "presence",
+    gainDb: number,
+  ) => void;
 }
 
 const engineIcons: Record<string, string> = {
@@ -21,14 +27,21 @@ export function SoundEnginePanel({
   name,
   engineType,
   isActive,
+  onGainChange,
 }: SoundEnginePanelProps) {
   const icon = engineIcons[engineType] ?? "⚡";
+  const [gainDb, setGainDb] = useState(0);
+
+  const handleGain = (v: number) => {
+    setGainDb(v);
+    onGainChange?.(engineType, v);
+  };
 
   return (
     <div
       style={{
-        width: 140,
-        minHeight: 110,
+        width: 150,
+        minHeight: 180,
         background: isActive
           ? "linear-gradient(135deg, #0d2040 0%, #0a1628 100%)"
           : "#070f22",
@@ -99,35 +112,105 @@ export function SoundEnginePanel({
             letterSpacing: "0.1em",
           }}
         >
-          {isActive ? "ONLINE" : "OFFLINE"}
+          {isActive ? "ACTIVE" : "STANDBY"}
         </span>
       </div>
 
-      {isActive && (
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            alignItems: "flex-end",
-            height: 24,
-            zIndex: 1,
-          }}
-        >
-          {METER_BARS.map(({ anim, key }, i) => (
+      {/* Meter bars */}
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          alignItems: "flex-end",
+          height: 28,
+          zIndex: 1,
+        }}
+      >
+        {METER_BARS.map(({ key, anim }) => (
+          <div
+            key={key}
+            style={{
+              width: 10,
+              height: 28,
+              background: "#010811",
+              borderRadius: 2,
+              overflow: "hidden",
+              border: "1px solid #1a3a6b",
+            }}
+          >
             <div
-              key={key}
               style={{
-                width: 6,
-                background: "linear-gradient(to top, #FFD700, #FFE44D)",
+                position: "relative" as const,
+                bottom: 0,
+                width: "100%",
+                height: isActive ? "70%" : "20%",
+                background: isActive
+                  ? "linear-gradient(180deg, #FFD700, #FF8800)"
+                  : "#1a3a6b",
                 borderRadius: 2,
-                boxShadow: "0 0 4px #FFD700",
-                animation: `${anim} ${0.7 + i * 0.15}s ease-in-out infinite`,
-                animationDelay: `${i * 0.1}s`,
+                marginTop: "auto",
+                animation: isActive
+                  ? `${anim} 1.4s ease-in-out infinite`
+                  : "none",
+                transition: "height 0.4s",
               }}
             />
-          ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Vertical GAIN slider */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
+          zIndex: 1,
+          marginTop: 4,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 7,
+            color: "rgba(255,215,0,0.7)",
+            letterSpacing: "0.1em",
+          }}
+        >
+          GAIN
         </div>
-      )}
+        <div className="eq-slider-container" style={{ height: 80, width: 28 }}>
+          <input
+            type="range"
+            className="eq-vert-slider"
+            data-ocid={`engine.${engineType}_input`}
+            min={-12}
+            max={12}
+            step={0.5}
+            value={gainDb}
+            style={{
+              width: 80,
+              opacity: isActive ? 1 : 0.4,
+              pointerEvents: isActive ? "auto" : "none",
+            }}
+            onChange={(e) => handleGain(Number.parseFloat(e.target.value))}
+          />
+        </div>
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 9,
+            fontWeight: 700,
+            color: gainDb > 0 ? "#FFD700" : gainDb < 0 ? "#00BFFF" : "#fff",
+            textShadow: isActive
+              ? `0 0 6px ${gainDb > 0 ? "#FFD700" : "#00BFFF"}`
+              : "none",
+          }}
+        >
+          {gainDb > 0 ? `+${gainDb}` : gainDb}dB
+        </div>
+      </div>
     </div>
   );
 }

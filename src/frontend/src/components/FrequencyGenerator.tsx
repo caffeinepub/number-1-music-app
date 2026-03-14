@@ -1,15 +1,31 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface FrequencyGeneratorProps {
   isActive: boolean;
+  onToneChange?: (freq: number, mix: number) => void;
 }
 
 const FREQ_LABELS = ["20Hz", "100Hz", "500Hz", "1kHz", "5kHz", "20kHz"];
 
-export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
+export function FrequencyGenerator({
+  isActive,
+  onToneChange,
+}: FrequencyGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const phaseRef = useRef(0);
+  const [freq, setFreq] = useState(60);
+  const [mix, setMix] = useState(0);
+
+  const handleFreq = (v: number) => {
+    setFreq(v);
+    onToneChange?.(v, mix);
+  };
+
+  const handleMix = (v: number) => {
+    setMix(v);
+    onToneChange?.(freq, v);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,7 +40,6 @@ export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
       ctx.fillStyle = "#010811";
       ctx.fillRect(0, 0, w, h);
 
-      // Grid
       ctx.strokeStyle = "rgba(255,215,0,0.08)";
       ctx.lineWidth = 0.5;
       for (let x = 0; x < w; x += 20) {
@@ -41,9 +56,8 @@ export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
       }
 
       if (isActive) {
-        // Multi-frequency display
         const freqs = [1, 2, 4, 8];
-        freqs.forEach((freq, fi) => {
+        freqs.forEach((f, fi) => {
           const alpha = 1 - fi * 0.2;
           ctx.beginPath();
           ctx.strokeStyle = `rgba(255,215,0,${alpha})`;
@@ -51,7 +65,7 @@ export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
           ctx.shadowBlur = 4;
           ctx.shadowColor = "#FFD700";
           for (let x = 0; x < w; x++) {
-            const t = (x / w) * Math.PI * 2 * freq + phaseRef.current * freq;
+            const t = (x / w) * Math.PI * 2 * f + phaseRef.current * f;
             const y = h / 2 + Math.sin(t) * (h / 3 - fi * 4);
             if (x === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
@@ -60,7 +74,6 @@ export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
         });
         phaseRef.current += 0.04;
 
-        // dB scale on right
         ctx.fillStyle = "rgba(255,215,0,0.5)";
         ctx.font = "7px Orbitron, sans-serif";
         ["+12", "0", "-12"].forEach((label, i) => {
@@ -89,7 +102,7 @@ export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 8,
+        gap: 10,
       }}
     >
       <div
@@ -98,96 +111,149 @@ export function FrequencyGenerator({ isActive }: FrequencyGeneratorProps) {
           fontSize: 9,
           fontWeight: 700,
           color: isActive ? "#FFD700" : "rgba(255,215,0,0.4)",
-          letterSpacing: "0.12em",
+          letterSpacing: "0.15em",
           textAlign: "center",
-          textShadow: isActive ? "0 0 10px #FFD700" : "none",
         }}
       >
-        LM3204
-        <br />
-        <span style={{ fontSize: 8, color: "rgba(255,215,0,0.6)" }}>
-          FREQUENCY GENERATOR
-        </span>
+        FREQUENCY GENERATOR
       </div>
 
       <canvas
         ref={canvasRef}
-        width={140}
-        height={56}
+        width={120}
+        height={48}
         style={{ borderRadius: 4, border: "1px solid #1a3a6b" }}
       />
 
-      {/* Frequency scale */}
+      {/* Freq labels row */}
       <div
         style={{
           display: "flex",
           gap: 4,
-          justifyContent: "space-between",
-          width: "100%",
+          flexWrap: "wrap",
+          justifyContent: "center",
         }}
       >
-        {FREQ_LABELS.map((f) => (
+        {FREQ_LABELS.map((label) => (
           <div
-            key={f}
+            key={label}
             style={{
               fontFamily: "Orbitron, sans-serif",
               fontSize: 6,
-              color: isActive ? "rgba(255,215,0,0.7)" : "rgba(255,215,0,0.2)",
-              textAlign: "center",
+              color: "rgba(255,215,0,0.5)",
+              padding: "1px 3px",
+              border: "1px solid rgba(255,215,0,0.2)",
+              borderRadius: 2,
             }}
           >
-            {f}
+            {label}
           </div>
         ))}
       </div>
 
-      {/* Engine connection indicators */}
-      <div style={{ display: "flex", gap: 4 }}>
-        {["B", "M", "H", "P"].map((e, i) => (
+      {/* FREQ + MIX vertical sliders side by side */}
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
           <div
-            key={e}
             style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 2,
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              color: "rgba(255,215,0,0.7)",
+              letterSpacing: "0.1em",
             }}
           >
-            <div
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: isActive ? "#FFD700" : "#1a2a4a",
-                boxShadow: isActive ? "0 0 6px #FFD700" : "none",
-                animation: isActive
-                  ? `orbPulse ${0.8 + i * 0.2}s ease-in-out infinite`
-                  : "none",
-              }}
-            />
-            <div
-              style={{
-                fontFamily: "Orbitron, sans-serif",
-                fontSize: 7,
-                color: "rgba(255,215,0,0.6)",
-              }}
-            >
-              {e}
-            </div>
+            FREQ
           </div>
-        ))}
-      </div>
+          <div
+            className="eq-slider-container"
+            style={{ height: 80, width: 28 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="freqgen.freq_input"
+              min={20}
+              max={200}
+              step={1}
+              value={freq}
+              style={{
+                width: 80,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleFreq(Number.parseInt(e.target.value))}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 8,
+              fontWeight: 700,
+              color: "#FFD700",
+              textShadow: isActive ? "0 0 6px #FFD700" : "none",
+            }}
+          >
+            {freq}Hz
+          </div>
+        </div>
 
-      <div
-        style={{
-          fontFamily: "Rajdhani, sans-serif",
-          fontSize: 9,
-          color: "rgba(255,215,0,0.5)",
-          letterSpacing: "0.1em",
-          textAlign: "center",
-        }}
-      >
-        AUTO-CONNECTS ALL 4 ENGINES • dB SCALE
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              color: "rgba(0,191,255,0.7)",
+              letterSpacing: "0.1em",
+            }}
+          >
+            MIX
+          </div>
+          <div
+            className="eq-slider-container"
+            style={{ height: 80, width: 28 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="freqgen.mix_input"
+              min={0}
+              max={100}
+              step={1}
+              value={mix}
+              style={{
+                width: 80,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleMix(Number.parseInt(e.target.value))}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 8,
+              fontWeight: 700,
+              color: "#00BFFF",
+              textShadow: isActive ? "0 0 6px #00BFFF" : "none",
+            }}
+          >
+            {mix}%
+          </div>
+        </div>
       </div>
     </div>
   );

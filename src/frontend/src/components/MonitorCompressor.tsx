@@ -1,18 +1,44 @@
+import { useState } from "react";
+
 interface MonitorCompressorProps {
   isActive: boolean;
   onThresholdChange: (v: number) => void;
+  onRatioChange?: (v: number) => void;
+  onAttackChange?: (v: number) => void;
+  onReleaseChange?: (v: number) => void;
 }
 
 export function MonitorCompressor({
   isActive,
   onThresholdChange,
+  onRatioChange,
+  onAttackChange,
+  onReleaseChange,
 }: MonitorCompressorProps) {
-  const stats = [
-    { label: "THRESHOLD", value: "-24dB" },
-    { label: "RATIO", value: "12:1" },
-    { label: "ATTACK", value: "3ms" },
-    { label: "RELEASE", value: "250ms" },
-  ];
+  const [threshold, setThreshold] = useState(-24);
+  const [ratio, setRatio] = useState(12);
+  const [attack, setAttack] = useState(3); // ms display
+  const [release, setRelease] = useState(250); // ms display
+
+  const handleThreshold = (v: number) => {
+    setThreshold(v);
+    onThresholdChange(v);
+  };
+
+  const handleRatio = (v: number) => {
+    setRatio(v);
+    onRatioChange?.(v);
+  };
+
+  const handleAttack = (v: number) => {
+    setAttack(v);
+    onAttackChange?.(v / 1000); // convert ms to seconds
+  };
+
+  const handleRelease = (v: number) => {
+    setRelease(v);
+    onReleaseChange?.(v / 1000); // convert ms to seconds
+  };
 
   return (
     <div
@@ -42,7 +68,6 @@ export function MonitorCompressor({
         MONITOR COMPRESSOR
       </div>
 
-      {/* Harmonic badge */}
       <div
         style={{
           fontFamily: "Orbitron, sans-serif",
@@ -58,121 +83,218 @@ export function MonitorCompressor({
         100% HARMONIC PROCESSOR
       </div>
 
-      {/* Stats grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 6,
-          width: "100%",
-        }}
-      >
-        {stats.map(({ label, value }) => (
+      {/* 4 vertical sliders: THRESH, RATIO, ATTACK, RELEASE */}
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        {/* THRESHOLD */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
           <div
-            key={label}
             style={{
-              background: "rgba(0,0,0,0.3)",
-              border: "1px solid #1a3a6b",
-              borderRadius: 4,
-              padding: "4px 6px",
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 6,
+              color: "rgba(255,215,0,0.7)",
+              letterSpacing: "0.05em",
               textAlign: "center",
             }}
           >
-            <div
-              style={{
-                fontFamily: "Orbitron, sans-serif",
-                fontSize: 6,
-                color: "rgba(255,255,255,0.4)",
-                letterSpacing: "0.08em",
-              }}
-            >
-              {label}
-            </div>
-            <div
-              style={{
-                fontFamily: "Rajdhani, sans-serif",
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#FFD700",
-              }}
-            >
-              {value}
-            </div>
+            THR
           </div>
-        ))}
-      </div>
-
-      {/* Threshold slider */}
-      <div style={{ width: "100%" }}>
-        <div
-          style={{
-            fontFamily: "Orbitron, sans-serif",
-            fontSize: 7,
-            color: "rgba(255,215,0,0.6)",
-            textAlign: "center",
-            marginBottom: 4,
-          }}
-        >
-          THRESHOLD
-        </div>
-        <div
-          className="eq-slider-container"
-          style={{ height: 120, width: "100%" }}
-        >
-          <input
-            type="range"
-            className="eq-vert-slider"
-            data-ocid="compressor.threshold_input"
-            min={-40}
-            max={0}
-            step={1}
-            defaultValue={-24}
+          <div
+            className="eq-slider-container"
+            style={{ height: 80, width: 24 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="compressor.threshold_input"
+              min={-60}
+              max={0}
+              step={1}
+              value={threshold}
+              style={{
+                width: 80,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleThreshold(Number.parseInt(e.target.value))}
+            />
+          </div>
+          <div
             style={{
-              width: 120,
-              opacity: isActive ? 1 : 0.4,
-              pointerEvents: isActive ? "auto" : "none",
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              fontWeight: 700,
+              color: "#FFD700",
+              textShadow: isActive ? "0 0 6px #FFD700" : "none",
             }}
-            onChange={(e) =>
-              onThresholdChange(Number.parseFloat(e.target.value))
-            }
-          />
+          >
+            {threshold}dB
+          </div>
         </div>
-      </div>
 
-      {/* GR meter */}
-      <div style={{ width: "100%" }}>
+        {/* RATIO */}
         <div
           style={{
-            fontFamily: "Orbitron, sans-serif",
-            fontSize: 7,
-            color: "rgba(255,215,0,0.6)",
-            textAlign: "center",
-            marginBottom: 4,
-          }}
-        >
-          GAIN REDUCTION
-        </div>
-        <div
-          style={{
-            height: 6,
-            background: "#010811",
-            borderRadius: 3,
-            overflow: "hidden",
-            border: "1px solid #1a3a6b",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
           }}
         >
           <div
             style={{
-              height: "100%",
-              width: isActive ? "45%" : "0%",
-              background: "linear-gradient(90deg, #00FF88, #FFD700, #FF4444)",
-              borderRadius: 3,
-              transition: "width 0.5s",
-              animation: isActive
-                ? "meterBar1 1.5s ease-in-out infinite"
-                : "none",
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 6,
+              color: "rgba(0,191,255,0.7)",
+              letterSpacing: "0.05em",
+              textAlign: "center",
             }}
-          />
+          >
+            RATIO
+          </div>
+          <div
+            className="eq-slider-container"
+            style={{ height: 80, width: 24 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="compressor.ratio_input"
+              min={1}
+              max={20}
+              step={0.5}
+              value={ratio}
+              style={{
+                width: 80,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleRatio(Number.parseFloat(e.target.value))}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              fontWeight: 700,
+              color: "#00BFFF",
+              textShadow: isActive ? "0 0 6px #00BFFF" : "none",
+            }}
+          >
+            {ratio}:1
+          </div>
+        </div>
+
+        {/* ATTACK */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 6,
+              color: "rgba(0,255,136,0.7)",
+              letterSpacing: "0.05em",
+              textAlign: "center",
+            }}
+          >
+            ATK
+          </div>
+          <div
+            className="eq-slider-container"
+            style={{ height: 80, width: 24 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="compressor.attack_input"
+              min={1}
+              max={500}
+              step={1}
+              value={attack}
+              style={{
+                width: 80,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleAttack(Number.parseInt(e.target.value))}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              fontWeight: 700,
+              color: "#00FF88",
+              textShadow: isActive ? "0 0 6px #00FF88" : "none",
+            }}
+          >
+            {attack}ms
+          </div>
+        </div>
+
+        {/* RELEASE */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 6,
+              color: "rgba(255,100,100,0.8)",
+              letterSpacing: "0.05em",
+              textAlign: "center",
+            }}
+          >
+            REL
+          </div>
+          <div
+            className="eq-slider-container"
+            style={{ height: 80, width: 24 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="compressor.release_input"
+              min={50}
+              max={2000}
+              step={10}
+              value={release}
+              style={{
+                width: 80,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleRelease(Number.parseInt(e.target.value))}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              fontWeight: 700,
+              color: "#FF6464",
+              textShadow: isActive ? "0 0 6px #FF6464" : "none",
+            }}
+          >
+            {release}ms
+          </div>
         </div>
       </div>
     </div>

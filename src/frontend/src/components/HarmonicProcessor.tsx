@@ -1,13 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface HarmonicProcessorProps {
   isActive: boolean;
+  onDriveChange?: (v: number) => void;
 }
 
-export function HarmonicProcessor({ isActive }: HarmonicProcessorProps) {
+export function HarmonicProcessor({
+  isActive,
+  onDriveChange,
+}: HarmonicProcessorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const phaseRef = useRef(0);
+  const [drive, setDrive] = useState(0);
+
+  const handleDrive = (v: number) => {
+    setDrive(v);
+    onDriveChange?.(v);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,31 +30,29 @@ export function HarmonicProcessor({ isActive }: HarmonicProcessorProps) {
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      // Background
       ctx.fillStyle = "#010811";
       ctx.fillRect(0, 0, w, h);
 
       if (isActive) {
-        // Harmonic waveform
         ctx.beginPath();
-        ctx.strokeStyle = "#00FF88";
+        ctx.strokeStyle = drive > 0 ? "#FFD700" : "#00FF88";
         ctx.lineWidth = 1.5;
         ctx.shadowBlur = 6;
-        ctx.shadowColor = "#00FF88";
+        ctx.shadowColor = drive > 0 ? "#FFD700" : "#00FF88";
+        const driveFactor = 1 + drive / 50;
         for (let x = 0; x < w; x++) {
           const t = (x / w) * Math.PI * 4 + phaseRef.current;
           const y =
             h / 2 +
-            Math.sin(t) * (h / 4) +
+            Math.sin(t) * (h / 4) * driveFactor +
             Math.sin(t * 2) * (h / 8) +
             Math.sin(t * 3) * (h / 16);
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          if (x === 0) ctx.moveTo(x, Math.min(Math.max(y, 0), h));
+          else ctx.lineTo(x, Math.min(Math.max(y, 0), h));
         }
         ctx.stroke();
         phaseRef.current += 0.06;
       } else {
-        // flat line
         ctx.beginPath();
         ctx.strokeStyle = "rgba(0,255,136,0.2)";
         ctx.lineWidth = 1;
@@ -60,7 +68,7 @@ export function HarmonicProcessor({ isActive }: HarmonicProcessorProps) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isActive]);
+  }, [isActive, drive]);
 
   return (
     <div
@@ -85,7 +93,6 @@ export function HarmonicProcessor({ isActive }: HarmonicProcessorProps) {
           color: isActive ? "#00FF88" : "rgba(0,255,136,0.4)",
           letterSpacing: "0.15em",
           textAlign: "center",
-          textShadow: isActive ? "0 0 10px #00FF88" : "none",
         }}
       >
         HARMONIC PROCESSOR
@@ -94,75 +101,71 @@ export function HarmonicProcessor({ isActive }: HarmonicProcessorProps) {
       <canvas
         ref={canvasRef}
         width={120}
-        height={48}
+        height={50}
         style={{ borderRadius: 4, border: "1px solid #1a3a6b" }}
       />
+
+      {/* DRIVE vertical slider */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 7,
+            color: drive > 0 ? "rgba(255,215,0,0.9)" : "rgba(0,255,136,0.7)",
+            letterSpacing: "0.1em",
+          }}
+        >
+          DRIVE
+        </div>
+        <div className="eq-slider-container" style={{ height: 80, width: 28 }}>
+          <input
+            type="range"
+            className="eq-vert-slider"
+            data-ocid="harmonic.drive_input"
+            min={0}
+            max={100}
+            step={1}
+            value={drive}
+            style={{
+              width: 80,
+              opacity: isActive ? 1 : 0.4,
+              pointerEvents: isActive ? "auto" : "none",
+            }}
+            onChange={(e) => handleDrive(Number.parseInt(e.target.value))}
+          />
+        </div>
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 9,
+            fontWeight: 700,
+            color: drive > 30 ? "#FFD700" : "#00FF88",
+            textShadow: isActive
+              ? `0 0 6px ${drive > 30 ? "#FFD700" : "#00FF88"}`
+              : "none",
+          }}
+        >
+          {drive}%
+        </div>
+      </div>
 
       <div
         style={{
           fontFamily: "Orbitron, sans-serif",
-          fontSize: 11,
-          fontWeight: 700,
-          color: isActive ? "#00FF88" : "rgba(0,255,136,0.3)",
-          textShadow: isActive ? "0 0 8px #00FF88" : "none",
-          letterSpacing: "0.1em",
-        }}
-      >
-        100% HARMONIC CORRECTION
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
-        {["H1", "H2", "H3"].map((h, i) => (
-          <div
-            key={h}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <div
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: isActive ? "#00FF88" : "#0a2a1a",
-                boxShadow: isActive ? "0 0 8px #00FF88" : "none",
-                animation: isActive
-                  ? `orbPulse ${1.0 + i * 0.3}s ease-in-out infinite`
-                  : "none",
-              }}
-            />
-            <div
-              style={{
-                fontFamily: "Orbitron, sans-serif",
-                fontSize: 7,
-                color: "rgba(0,255,136,0.6)",
-              }}
-            >
-              {h}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          fontFamily: "Rajdhani, sans-serif",
-          fontSize: 10,
+          fontSize: 7,
           color: "rgba(0,255,136,0.5)",
           letterSpacing: "0.1em",
           textAlign: "center",
         }}
       >
-        SIGNAL PROCESSOR
+        WAVESHAPER · HARMONIC DIST
       </div>
     </div>
   );

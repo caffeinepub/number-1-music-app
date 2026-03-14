@@ -63,6 +63,10 @@ export default function App() {
           else audioEngine.setBoosterGain(1.0);
         } else if (key === "EPIC" && !newVal) {
           audioEngine.setEpicenterIntensity(0);
+        } else if (key === "STAB") {
+          audioEngine.setBassStabilizerAmount(newVal ? 50 : 0);
+        } else if (key === "MIX" && !newVal) {
+          audioEngine.setPan(0);
         }
 
         return next;
@@ -123,53 +127,32 @@ export default function App() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              background:
-                "linear-gradient(180deg, #0a1628 0%, transparent 100%)",
-              borderBottom: "1px solid rgba(255,215,0,0.2)",
-              flexWrap: "wrap",
-              gap: 8,
+              borderBottom: "1px solid rgba(255,215,0,0.15)",
+              background: "rgba(5,13,31,0.9)",
+              backdropFilter: "blur(10px)",
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
             }}
           >
             <div
               style={{
                 fontFamily: "Orbitron, sans-serif",
-                fontSize: "clamp(13px, 2vw, 20px)",
+                fontSize: 13,
                 fontWeight: 900,
                 color: "#FFD700",
-                textShadow: "0 0 20px rgba(255,215,0,0.7)",
-                letterSpacing: "0.1em",
+                letterSpacing: "0.2em",
+                textShadow: "0 0 20px rgba(255,215,0,0.5)",
               }}
             >
-              ⚡ NUMBER 1 WINNING MUSIC APP
-            </div>
-            <div
-              style={{
-                fontFamily: "Rajdhani, sans-serif",
-                fontSize: "clamp(12px, 1.5vw, 15px)",
-                fontWeight: 600,
-                color: audioEngine.currentTrack
-                  ? "#FFD700"
-                  : "rgba(255,255,255,0.3)",
-                textAlign: "center",
-                flex: 1,
-                padding: "0 16px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {audioEngine.currentTrack || "─── Select a track to begin ───"}
+              ◈ NUMBER 1 WINNING MUSIC APP
             </div>
             <div
               style={{
                 fontFamily: "Orbitron, sans-serif",
-                fontSize: "clamp(10px, 1.3vw, 13px)",
-                fontWeight: 700,
+                fontSize: 10,
                 color: "rgba(255,215,0,0.6)",
                 letterSpacing: "0.15em",
-                padding: "3px 10px",
-                border: "1px solid rgba(255,215,0,0.3)",
-                borderRadius: 20,
               }}
             >
               2026 — 2027
@@ -198,6 +181,7 @@ export default function App() {
                 isActive={bothCharged && switches.AMP}
                 onBoostChange={audioEngine.setBoosterGain}
                 onVolumeChange={audioEngine.setVolume}
+                onEnhanceChange={audioEngine.setSmartChipEnhance}
               />
 
               <div
@@ -302,7 +286,10 @@ export default function App() {
                 </div>
               </div>
 
-              <PowerStabilizer isActive={bothCharged && switches.STAB} />
+              <PowerStabilizer
+                isActive={bothCharged && switches.STAB}
+                onActiveChange={audioEngine.setPowerStabilizerActive}
+              />
             </div>
 
             {/* ROW 2 — WAVEFORM + ENGINES */}
@@ -333,6 +320,7 @@ export default function App() {
                       name={name}
                       engineType={type}
                       isActive={bothCharged}
+                      onGainChange={audioEngine.setEngineGain}
                     />
                   </div>
                 ))}
@@ -347,14 +335,21 @@ export default function App() {
                 gap: 12,
               }}
             >
-              <SpecialProcessor isActive={bothCharged && switches.COMP} />
+              <SpecialProcessor
+                isActive={bothCharged && switches.COMP}
+                onModeChange={audioEngine.setSpecialProcessorMode}
+              />
               <BassStabilizer
                 isActive={bothCharged && switches.STAB}
                 bassLevel={0}
+                onAmountChange={audioEngine.setBassStabilizerAmount}
               />
               <MonitorCompressor
                 isActive={bothCharged && switches.COMP}
                 onThresholdChange={audioEngine.setCompressorThreshold}
+                onRatioChange={audioEngine.setCompressorRatio}
+                onAttackChange={audioEngine.setCompressorAttack}
+                onReleaseChange={audioEngine.setCompressorRelease}
               />
               <StereoLineMixer
                 onPanChange={audioEngine.setPan}
@@ -364,8 +359,14 @@ export default function App() {
                 isActive={bothCharged && switches.EPIC}
                 onChange={handleEpicenterChange}
               />
-              <HarmonicProcessor isActive={bothCharged} />
-              <FrequencyGenerator isActive={bothCharged} />
+              <HarmonicProcessor
+                isActive={bothCharged}
+                onDriveChange={audioEngine.setHarmonicDrive}
+              />
+              <FrequencyGenerator
+                isActive={bothCharged}
+                onToneChange={audioEngine.setFreqGenTone}
+              />
             </div>
 
             {/* ROW 4 — STUDIO SWITCHES */}
@@ -400,14 +401,14 @@ export default function App() {
               letterSpacing: "0.1em",
             }}
           >
-            © {new Date().getFullYear()}. Built with ❤ using{" "}
+            © {new Date().getFullYear()}.{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "rgba(255,215,0,0.6)", textDecoration: "none" }}
             >
-              caffeine.ai
+              Built with ♥ using caffeine.ai
             </a>
           </footer>
         </div>

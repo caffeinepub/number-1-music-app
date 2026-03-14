@@ -27,6 +27,8 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
   const [values, setValues] = useState<Record<string, number>>(
     Object.fromEntries(bands.map((b) => [b.key, 0])),
   );
+  // false = FACE UP (default), true = FACE DOWN
+  const [rotated, setRotated] = useState(false);
 
   const handleChange = (key: string, val: number) => {
     setValues((prev) => ({ ...prev, [key]: val }));
@@ -43,22 +45,76 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
         opacity: isActive ? 1 : 0.5,
         transition: "opacity 0.4s, border-color 0.4s",
         boxShadow: isActive ? "0 0 20px rgba(255,215,0,0.15)" : "none",
+        position: "relative",
       }}
     >
+      {/* Header */}
       <div
         style={{
-          fontFamily: "Orbitron, sans-serif",
-          fontSize: 13,
-          fontWeight: 700,
-          color: "#FFD700",
-          letterSpacing: "0.2em",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           marginBottom: 4,
-          textAlign: "center",
-          textShadow: isActive ? "0 0 10px rgba(255,215,0,0.5)" : "none",
+          position: "relative",
         }}
       >
-        ⚙ 6-BAND EQUALIZER
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#FFD700",
+            letterSpacing: "0.2em",
+            textAlign: "center",
+            textShadow: isActive ? "0 0 10px rgba(255,215,0,0.5)" : "none",
+          }}
+        >
+          ⚙ 6-BAND EQUALIZER
+        </div>
+
+        {/* Rotation button */}
+        <button
+          type="button"
+          data-ocid="eq.rotate_button"
+          onClick={() => setRotated((r) => !r)}
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 9,
+            fontWeight: 700,
+            color: rotated ? "#00BFFF" : "#FFD700",
+            background: rotated
+              ? "rgba(0,191,255,0.12)"
+              : "rgba(255,215,0,0.08)",
+            border: `1px solid ${rotated ? "rgba(0,191,255,0.5)" : "rgba(255,215,0,0.4)"}`,
+            borderRadius: 6,
+            padding: "3px 8px",
+            cursor: "pointer",
+            letterSpacing: "0.08em",
+            transition: "all 0.25s",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              transition: "transform 0.4s",
+              transform: rotated ? "rotate(180deg)" : "rotate(0deg)",
+              fontSize: 12,
+            }}
+          >
+            ↻
+          </span>
+          {rotated ? "FACE DOWN" : "FACE UP"}
+        </button>
       </div>
+
       <div
         style={{
           fontFamily: "Rajdhani, sans-serif",
@@ -70,10 +126,11 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
         }}
       >
         {isActive
-          ? "DRAG UP = BOOST · DRAG DOWN = CUT · EQ SWITCH = ON/OFF"
+          ? "DRAG UP = BOOST · DRAG DOWN = CUT"
           : "EQ BYPASSED — FLIP EQ SWITCH TO ENABLE"}
       </div>
 
+      {/* Sliders — rotate 180deg for face-down */}
       <div
         style={{
           display: "flex",
@@ -81,13 +138,15 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
           justifyContent: "center",
           alignItems: "flex-start",
           pointerEvents: isActive ? "auto" : "none",
+          transition: "transform 0.45s cubic-bezier(0.4,0,0.2,1)",
+          transform: rotated ? "rotate(180deg)" : "rotate(0deg)",
+          transformOrigin: "center center",
         }}
       >
         {bands.map((band) => {
           const val = values[band.key];
           const isBoost = val > 0;
           const isCut = val < 0;
-
           return (
             <div
               key={band.key}
@@ -98,7 +157,6 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                 gap: 6,
               }}
             >
-              {/* dB value */}
               <div
                 style={{
                   fontFamily: "Orbitron, sans-serif",
@@ -117,15 +175,14 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                   minWidth: 36,
                   whiteSpace: "nowrap",
                   transition: "color 0.2s",
+                  transform: rotated ? "rotate(180deg)" : "rotate(0deg)",
+                  display: "inline-block",
                 }}
               >
                 {val >= 0 ? "+" : ""}
                 {val.toFixed(1)}
               </div>
-
-              {/* Vertical slider container */}
               <div className="eq-slider-container">
-                {/* Center 0dB tick */}
                 <div className="eq-center-tick" />
                 <input
                   type="range"
@@ -140,8 +197,6 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                   }
                 />
               </div>
-
-              {/* Band label */}
               <div
                 style={{
                   fontFamily: "Rajdhani, sans-serif",
@@ -152,6 +207,8 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                   textAlign: "center",
                   minWidth: 36,
                   transition: "color 0.2s",
+                  transform: rotated ? "rotate(180deg)" : "rotate(0deg)",
+                  display: "inline-block",
                 }}
               >
                 {band.label}
@@ -161,7 +218,6 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
         })}
       </div>
 
-      {/* Reset all to 0 button */}
       <div style={{ textAlign: "center", marginTop: 14 }}>
         <button
           type="button"

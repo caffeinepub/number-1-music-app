@@ -3,6 +3,7 @@ import { useState } from "react";
 interface BassStabilizerProps {
   isActive: boolean;
   bassLevel: number;
+  onAmountChange?: (v: number) => void;
 }
 
 const BAR_DEFS = [
@@ -14,10 +15,20 @@ const BAR_DEFS = [
 
 const ANIM_NAMES = ["meterBar1", "meterBar2", "meterBar3", "meterBar1"];
 
-export function BassStabilizer({ isActive, bassLevel }: BassStabilizerProps) {
+export function BassStabilizer({
+  isActive,
+  bassLevel,
+  onAmountChange,
+}: BassStabilizerProps) {
   const [enabled, setEnabled] = useState(true);
+  const [amount, setAmount] = useState(50);
   const normalizedBass = Math.min(Math.max((bassLevel + 12) / 24, 0), 1);
   const active = isActive && enabled;
+
+  const handleAmount = (v: number) => {
+    setAmount(v);
+    onAmountChange?.(v);
+  };
 
   return (
     <div
@@ -93,6 +104,55 @@ export function BassStabilizer({ isActive, bassLevel }: BassStabilizerProps) {
         })}
       </div>
 
+      {/* STABILIZE vertical slider */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 7,
+            color: active ? "rgba(255,215,0,0.8)" : "rgba(255,215,0,0.3)",
+            letterSpacing: "0.1em",
+          }}
+        >
+          STABILIZE
+        </div>
+        <div className="eq-slider-container" style={{ height: 80, width: 28 }}>
+          <input
+            type="range"
+            className="eq-vert-slider"
+            data-ocid="stabilizer.amount_input"
+            min={0}
+            max={100}
+            step={1}
+            value={amount}
+            style={{
+              width: 80,
+              opacity: active ? 1 : 0.4,
+              pointerEvents: active ? "auto" : "none",
+            }}
+            onChange={(e) => handleAmount(Number.parseInt(e.target.value))}
+          />
+        </div>
+        <div
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 9,
+            fontWeight: 700,
+            color: active ? "#FFD700" : "rgba(255,215,0,0.3)",
+            textShadow: active ? "0 0 6px #FFD700" : "none",
+          }}
+        >
+          {amount}%
+        </div>
+      </div>
+
       <button
         type="button"
         data-ocid="stabilizer.toggle"
@@ -100,18 +160,16 @@ export function BassStabilizer({ isActive, bassLevel }: BassStabilizerProps) {
         style={{
           fontFamily: "Orbitron, sans-serif",
           fontSize: 8,
-          fontWeight: 700,
-          letterSpacing: "0.1em",
-          padding: "5px 12px",
-          borderRadius: 4,
+          padding: "4px 10px",
+          background: enabled ? "rgba(255,215,0,0.15)" : "rgba(0,0,0,0.3)",
           border: `1px solid ${enabled ? "#FFD700" : "#1a3a6b"}`,
-          background: enabled ? "rgba(255,215,0,0.15)" : "rgba(10,20,40,0.8)",
-          color: enabled ? "#FFD700" : "rgba(255,255,255,0.4)",
+          borderRadius: 4,
+          color: enabled ? "#FFD700" : "rgba(255,215,0,0.4)",
           cursor: "pointer",
-          transition: "all 0.2s",
+          letterSpacing: "0.1em",
         }}
       >
-        {enabled ? "STABILIZER ON" : "STABILIZER OFF"}
+        {enabled ? "ON" : "OFF"}
       </button>
     </div>
   );

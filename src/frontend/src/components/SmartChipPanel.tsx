@@ -4,6 +4,7 @@ interface SmartChipPanelProps {
   isActive: boolean;
   onBoostChange?: (v: number) => void;
   onVolumeChange?: (v: number) => void;
+  onEnhanceChange?: (v: number) => void;
 }
 
 const LEFT_PINS = [15, 30, 45, 55];
@@ -13,10 +14,12 @@ export function SmartChipPanel({
   isActive,
   onBoostChange,
   onVolumeChange,
+  onEnhanceChange,
 }: SmartChipPanelProps) {
   const scanRef = useRef<HTMLDivElement>(null);
   const [boostWatts, setBoostWatts] = useState(375);
   const [volPct, setVolPct] = useState(100);
+  const [enhance, setEnhance] = useState(0);
 
   useEffect(() => {
     if (!scanRef.current) return;
@@ -32,6 +35,11 @@ export function SmartChipPanel({
   const handleVol = (v: number) => {
     setVolPct(Math.round(v * 100));
     onVolumeChange?.(v);
+  };
+
+  const handleEnhance = (v: number) => {
+    setEnhance(v);
+    onEnhanceChange?.(v);
   };
 
   return (
@@ -86,12 +94,7 @@ export function SmartChipPanel({
       >
         {/* Chip visual */}
         <div
-          style={{
-            position: "relative",
-            width: 70,
-            height: 90,
-            flexShrink: 0,
-          }}
+          style={{ position: "relative", width: 70, height: 90, flexShrink: 0 }}
         >
           <div
             style={{
@@ -175,7 +178,6 @@ export function SmartChipPanel({
               />
             ))}
           </div>
-          {/* Labels below chip */}
           <div style={{ marginTop: 6, textAlign: "center" }}>
             <div
               style={{
@@ -256,7 +258,7 @@ export function SmartChipPanel({
           </div>
         </div>
 
-        {/* AMP VOLUME vertical slider — removed and rebuilt taller */}
+        {/* AMP VOLUME vertical slider */}
         <div
           style={{
             display: "flex",
@@ -307,6 +309,62 @@ export function SmartChipPanel({
             }}
           >
             {volPct}%
+          </div>
+        </div>
+
+        {/* ENHANCE vertical slider */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              color: isActive ? "#00FF88" : "rgba(0,255,136,0.4)",
+              letterSpacing: "0.1em",
+              textAlign: "center",
+              textShadow: isActive ? "0 0 6px #00FF88" : "none",
+            }}
+          >
+            ENH
+          </div>
+          <div
+            className="eq-slider-container"
+            style={{ height: 130, width: 28 }}
+          >
+            <input
+              type="range"
+              className="eq-vert-slider"
+              data-ocid="chip.enhance_input"
+              min={0}
+              max={100}
+              step={1}
+              value={enhance}
+              style={{
+                width: 130,
+                opacity: isActive ? 1 : 0.4,
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+              onChange={(e) => handleEnhance(Number.parseInt(e.target.value))}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 9,
+              fontWeight: 700,
+              color: isActive ? "#00FF88" : "rgba(0,255,136,0.3)",
+              textShadow: isActive ? "0 0 6px #00FF88" : "none",
+              minWidth: 28,
+              textAlign: "center",
+            }}
+          >
+            {enhance}%
           </div>
         </div>
       </div>
