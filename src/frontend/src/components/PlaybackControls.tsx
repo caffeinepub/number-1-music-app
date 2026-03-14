@@ -39,16 +39,15 @@ export function PlaybackControls({
     e.target.value = "";
   };
 
+  const handleSelectMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.boxShadow = "0 0 22px #FFD700";
+  };
+  const handleSelectMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.boxShadow = "0 0 12px rgba(255,215,0,0.5)";
+  };
+
   const seekPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const activeColor = isEnabled ? "#FFD700" : "#1a3a6b";
-
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 20px #FFD700";
-  };
-  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLButtonElement).style.boxShadow =
-      "0 0 12px rgba(255,215,0,0.5)";
-  };
 
   return (
     <div
@@ -84,8 +83,8 @@ export function PlaybackControls({
           type="button"
           data-ocid="player.upload_button"
           onClick={() => fileInputRef.current?.click()}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          onMouseEnter={handleSelectMouseEnter}
+          onMouseLeave={handleSelectMouseLeave}
           style={{
             fontFamily: "Orbitron, sans-serif",
             fontSize: 11,
@@ -134,7 +133,7 @@ export function PlaybackControls({
         </div>
       </div>
 
-      {/* Row 2: Controls */}
+      {/* Row 2: Controls + seek + vertical volume */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button
           type="button"
@@ -209,7 +208,7 @@ export function PlaybackControls({
             justifyContent: "center",
             transition: "all 0.2s",
           }}
-          onClick={() => isEnabled && onSeek(0)}
+          onClick={() => isEnabled && onSeek(duration > 0 ? duration - 1 : 0)}
         >
           ⏭
         </button>
@@ -245,30 +244,50 @@ export function PlaybackControls({
           />
         </div>
 
+        {/* VERTICAL MASTER VOLUME */}
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 6,
+            gap: 4,
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 16 }}>🔊</span>
-          <input
-            type="range"
-            className="volume-slider"
-            data-ocid="player.volume_input"
-            min={0}
-            max={1}
-            step={0.01}
-            defaultValue={1}
-            style={{ width: 80, "--vol-pct": "100%" } as React.CSSProperties}
-            onChange={(e) => {
-              const v = Number.parseFloat(e.target.value);
-              onVolumeChange(v);
-              e.currentTarget.style.setProperty("--vol-pct", `${v * 100}%`);
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              color: "rgba(0,191,255,0.8)",
+              letterSpacing: "0.1em",
+              textAlign: "center",
             }}
-          />
+          >
+            VOL
+          </div>
+          <div className="vol-amp-container">
+            <input
+              type="range"
+              className="vol-amp-slider"
+              data-ocid="player.volume_input"
+              min={0}
+              max={1}
+              step={0.01}
+              defaultValue={1}
+              onChange={(e) =>
+                onVolumeChange(Number.parseFloat(e.target.value))
+              }
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "Orbitron, sans-serif",
+              fontSize: 7,
+              color: "rgba(0,191,255,0.8)",
+            }}
+          >
+            🔊
+          </div>
         </div>
       </div>
 

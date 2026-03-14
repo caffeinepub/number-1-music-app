@@ -4,7 +4,6 @@ import { BatteryWidget } from "./components/BatteryWidget";
 import { BookCover } from "./components/BookCover";
 import { ChainLink } from "./components/ChainLink";
 import { CircuitLines } from "./components/CircuitLines";
-import { EQSliders } from "./components/EQSliders";
 import { Epicenter } from "./components/Epicenter";
 import { FrequencyGenerator } from "./components/FrequencyGenerator";
 import { HarmonicProcessor } from "./components/HarmonicProcessor";
@@ -29,16 +28,7 @@ export default function App() {
   const [showCover, setShowCover] = useState(true);
   const [battery1Level, setBattery1Level] = useState(0);
   const [battery2Level, setBattery2Level] = useState(0);
-  const [eqValues, setEqValues] = useState<Record<string, number>>({
-    bass: 0,
-    midLow: 0,
-    mid: 0,
-    midHigh: 0,
-    treble: 0,
-    presence: 0,
-  });
   const [switches, setSwitches] = useState<Record<string, boolean>>({
-    EQ: true,
     COMP: true,
     STAB: true,
     EPIC: true,
@@ -52,14 +42,6 @@ export default function App() {
 
   const bothCharged = battery1Level >= 100 && battery2Level >= 100;
 
-  const handleFilterChange = useCallback(
-    (band: string, gainDb: number) => {
-      setEqValues((prev) => ({ ...prev, [band]: gainDb }));
-      audioEngine.setFilterGain(band, gainDb);
-    },
-    [audioEngine],
-  );
-
   const handleFileSelect = useCallback(
     async (file: File) => {
       await audioEngine.loadFile(file);
@@ -67,9 +49,36 @@ export default function App() {
     [audioEngine],
   );
 
-  const handleToggleSwitch = (key: string) => {
-    setSwitches((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const handleToggleSwitch = useCallback(
+    (key: string) => {
+      setSwitches((prev) => {
+        const newVal = !prev[key];
+        const next = { ...prev, [key]: newVal };
+
+        if (key === "COMP") {
+          audioEngine.bypassCompressor(!newVal);
+        } else if (key === "AMP") {
+          audioEngine.bypassBooster(!newVal);
+          if (!newVal) audioEngine.setBoosterGain(0);
+          else audioEngine.setBoosterGain(1.0);
+        } else if (key === "EPIC" && !newVal) {
+          audioEngine.setEpicenterIntensity(0);
+        }
+
+        return next;
+      });
+    },
+    [audioEngine],
+  );
+
+  const handleEpicenterChange = useCallback(
+    (v: number) => {
+      if (switches.EPIC) {
+        audioEngine.setEpicenterIntensity(v);
+      }
+    },
+    [audioEngine, switches.EPIC],
+  );
 
   return (
     <div
@@ -186,7 +195,7 @@ export default function App() {
               }}
             >
               <SmartChipPanel
-                isActive={bothCharged}
+                isActive={bothCharged && switches.AMP}
                 onBoostChange={audioEngine.setBoosterGain}
                 onVolumeChange={audioEngine.setVolume}
               />
@@ -269,7 +278,9 @@ export default function App() {
                           color: bothCharged
                             ? "#FFD700"
                             : "rgba(255,215,0,0.3)",
-                          border: `1px solid ${bothCharged ? "#FFD700" : "#1a3a6b"}`,
+                          border: `1px solid ${
+                            bothCharged ? "#FFD700" : "#1a3a6b"
+                          }`,
                           borderRadius: 3,
                           padding: "2px 5px",
                           letterSpacing: "0.1em",
@@ -291,7 +302,7 @@ export default function App() {
                 </div>
               </div>
 
-              <PowerStabilizer isActive={bothCharged} />
+              <PowerStabilizer isActive={bothCharged && switches.STAB} />
             </div>
 
             {/* ROW 2 — WAVEFORM + ENGINES */}
@@ -339,7 +350,7 @@ export default function App() {
               <SpecialProcessor isActive={bothCharged && switches.COMP} />
               <BassStabilizer
                 isActive={bothCharged && switches.STAB}
-                bassLevel={eqValues.bass}
+                bassLevel={0}
               />
               <MonitorCompressor
                 isActive={bothCharged && switches.COMP}
@@ -351,7 +362,7 @@ export default function App() {
               />
               <Epicenter
                 isActive={bothCharged && switches.EPIC}
-                onChange={() => {}}
+                onChange={handleEpicenterChange}
               />
               <HarmonicProcessor isActive={bothCharged} />
               <FrequencyGenerator isActive={bothCharged} />
@@ -360,12 +371,8 @@ export default function App() {
             {/* ROW 4 — STUDIO SWITCHES */}
             <StudioSwitches switches={switches} onToggle={handleToggleSwitch} />
 
-            {/* ROW 5 — EQ + CHAIN */}
-            <ChainLink eqValues={eqValues} />
-            <EQSliders
-              onFilterChange={handleFilterChange}
-              isActive={bothCharged && switches.EQ}
-            />
+            {/* ROW 5 — CHAIN LINK */}
+            <ChainLink eqValues={{}} />
 
             {/* ROW 6 — PLAYBACK CONTROLS */}
             <PlaybackControls

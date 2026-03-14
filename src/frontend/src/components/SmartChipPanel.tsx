@@ -199,7 +199,7 @@ export function SmartChipPanel({
           </div>
         </div>
 
-        {/* Booster slider */}
+        {/* 1500W Booster vertical slider */}
         <div
           style={{
             display: "flex",
@@ -223,7 +223,7 @@ export function SmartChipPanel({
           </div>
           <div
             className="eq-slider-container"
-            style={{ height: 90, width: 28 }}
+            style={{ height: 130, width: 36 }}
           >
             <input
               type="range"
@@ -234,7 +234,7 @@ export function SmartChipPanel({
               step={0.05}
               defaultValue={1.0}
               style={{
-                width: 90,
+                width: 130,
                 opacity: isActive ? 1 : 0.4,
                 pointerEvents: isActive ? "auto" : "none",
               }}
@@ -244,17 +244,19 @@ export function SmartChipPanel({
           <div
             style={{
               fontFamily: "Orbitron, sans-serif",
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 700,
               color: "#FFD700",
               textShadow: isActive ? "0 0 8px #FFD700" : "none",
+              minWidth: 50,
+              textAlign: "center",
             }}
           >
             {boostWatts}W
           </div>
         </div>
 
-        {/* Volume slider */}
+        {/* AMP VOLUME vertical slider — removed and rebuilt taller */}
         <div
           style={{
             display: "flex",
@@ -267,29 +269,26 @@ export function SmartChipPanel({
             style={{
               fontFamily: "Orbitron, sans-serif",
               fontSize: 7,
-              color: "rgba(0,191,255,0.7)",
+              color: isActive ? "#00BFFF" : "rgba(0,191,255,0.4)",
               letterSpacing: "0.1em",
               textAlign: "center",
+              textShadow: isActive ? "0 0 6px #00BFFF" : "none",
             }}
           >
-            VOL
-            <br />
             AMP
+            <br />
+            VOL
           </div>
-          <div
-            className="eq-slider-container"
-            style={{ height: 90, width: 28 }}
-          >
+          <div className="vol-amp-container">
             <input
               type="range"
-              className="eq-vert-slider"
+              className="vol-amp-slider"
               data-ocid="chip.volume_input"
               min={0}
               max={1}
               step={0.01}
               defaultValue={1.0}
               style={{
-                width: 90,
                 opacity: isActive ? 1 : 0.4,
                 pointerEvents: isActive ? "auto" : "none",
               }}
@@ -299,13 +298,15 @@ export function SmartChipPanel({
           <div
             style={{
               fontFamily: "Orbitron, sans-serif",
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 700,
-              color: "#00BFFF",
+              color: isActive ? "#00BFFF" : "rgba(0,191,255,0.4)",
               textShadow: isActive ? "0 0 8px #00BFFF" : "none",
+              minWidth: 36,
+              textAlign: "center",
             }}
           >
-            {volPct}
+            {volPct}%
           </div>
         </div>
       </div>

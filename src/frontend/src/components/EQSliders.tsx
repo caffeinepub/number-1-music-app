@@ -6,12 +6,12 @@ interface EQSlidersProps {
 }
 
 const bands = [
-  { key: "bass", label: "60Hz" },
-  { key: "midLow", label: "250Hz" },
-  { key: "mid", label: "1kHz" },
-  { key: "midHigh", label: "4kHz" },
-  { key: "treble", label: "8kHz" },
-  { key: "presence", label: "16kHz" },
+  { key: "bass", label: "60Hz", color: "#FF4444" },
+  { key: "midLow", label: "250Hz", color: "#FF9900" },
+  { key: "mid", label: "1kHz", color: "#FFD700" },
+  { key: "midHigh", label: "4kHz", color: "#00FF88" },
+  { key: "treble", label: "8kHz", color: "#00BFFF" },
+  { key: "presence", label: "16kHz", color: "#CC44FF" },
 ];
 
 const ocids: Record<string, string> = {
@@ -37,12 +37,12 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
     <div
       style={{
         background: "linear-gradient(135deg, #080f22 0%, #050d1f 100%)",
-        border: "2px solid #1a3a6b",
+        border: `2px solid ${isActive ? "#FFD700" : "#1a3a6b"}`,
         borderRadius: 12,
         padding: "20px 16px",
         opacity: isActive ? 1 : 0.5,
-        pointerEvents: isActive ? "auto" : "none",
-        transition: "opacity 0.4s",
+        transition: "opacity 0.4s, border-color 0.4s",
+        boxShadow: isActive ? "0 0 20px rgba(255,215,0,0.15)" : "none",
       }}
     >
       <div
@@ -52,8 +52,9 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
           fontWeight: 700,
           color: "#FFD700",
           letterSpacing: "0.2em",
-          marginBottom: 8,
+          marginBottom: 4,
           textAlign: "center",
+          textShadow: isActive ? "0 0 10px rgba(255,215,0,0.5)" : "none",
         }}
       >
         ⚙ 6-BAND EQUALIZER
@@ -64,25 +65,28 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
           fontSize: 10,
           color: "rgba(255,215,0,0.5)",
           textAlign: "center",
-          marginBottom: 16,
+          marginBottom: 20,
           letterSpacing: "0.15em",
         }}
       >
-        VERTICAL · DRAG UP TO BOOST · +20dB MAX
+        {isActive
+          ? "DRAG UP = BOOST · DRAG DOWN = CUT · EQ SWITCH = ON/OFF"
+          : "EQ BYPASSED — FLIP EQ SWITCH TO ENABLE"}
       </div>
 
       <div
         style={{
           display: "flex",
-          gap: 8,
+          gap: 16,
           justifyContent: "center",
-          alignItems: "flex-end",
+          alignItems: "flex-start",
+          pointerEvents: isActive ? "auto" : "none",
         }}
       >
         {bands.map((band) => {
           const val = values[band.key];
-          // Convert gain (-20 to +20 dB) to a 0–100% position
-          const pct = ((val + 20) / 40) * 100;
+          const isBoost = val > 0;
+          const isCut = val < 0;
 
           return (
             <div
@@ -91,7 +95,7 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 8,
+                gap: 6,
               }}
             >
               {/* dB value */}
@@ -100,10 +104,19 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                   fontFamily: "Orbitron, sans-serif",
                   fontSize: 9,
                   fontWeight: 700,
-                  color: val === 0 ? "rgba(255,215,0,0.4)" : "#FFD700",
-                  textShadow: val !== 0 ? "0 0 8px #FFD700" : "none",
+                  color: isBoost
+                    ? band.color
+                    : isCut
+                      ? "#FF4444"
+                      : "rgba(255,215,0,0.4)",
+                  textShadow:
+                    val !== 0
+                      ? `0 0 8px ${isBoost ? band.color : "#FF4444"}`
+                      : "none",
                   textAlign: "center",
-                  minWidth: 40,
+                  minWidth: 36,
+                  whiteSpace: "nowrap",
+                  transition: "color 0.2s",
                 }}
               >
                 {val >= 0 ? "+" : ""}
@@ -112,7 +125,7 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
 
               {/* Vertical slider container */}
               <div className="eq-slider-container">
-                {/* Center (0dB) tick mark */}
+                {/* Center 0dB tick */}
                 <div className="eq-center-tick" />
                 <input
                   type="range"
@@ -122,13 +135,6 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                   step={0.5}
                   value={val}
                   data-ocid={ocids[band.key]}
-                  style={
-                    {
-                      // Dynamic fill: pct = thumb position, 50 = center (0dB)
-                      "--eq-pct": `${pct}%`,
-                      "--eq-center": "50%",
-                    } as React.CSSProperties
-                  }
                   onChange={(e) =>
                     handleChange(band.key, Number.parseFloat(e.target.value))
                   }
@@ -141,10 +147,11 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
                   fontFamily: "Rajdhani, sans-serif",
                   fontSize: 9,
                   fontWeight: 700,
-                  color: "rgba(255,215,0,0.7)",
+                  color: val !== 0 ? band.color : "rgba(255,215,0,0.7)",
                   letterSpacing: "0.05em",
                   textAlign: "center",
-                  minWidth: 40,
+                  minWidth: 36,
+                  transition: "color 0.2s",
                 }}
               >
                 {band.label}
@@ -152,6 +159,35 @@ export function EQSliders({ onFilterChange, isActive }: EQSlidersProps) {
             </div>
           );
         })}
+      </div>
+
+      {/* Reset all to 0 button */}
+      <div style={{ textAlign: "center", marginTop: 14 }}>
+        <button
+          type="button"
+          data-ocid="eq.reset_button"
+          disabled={!isActive}
+          onClick={() => {
+            const zeros = Object.fromEntries(bands.map((b) => [b.key, 0]));
+            setValues(zeros);
+            for (const band of bands) onFilterChange(band.key, 0);
+          }}
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            fontSize: 8,
+            fontWeight: 700,
+            color: isActive ? "#FFD700" : "rgba(255,215,0,0.3)",
+            background: "transparent",
+            border: `1px solid ${isActive ? "rgba(255,215,0,0.4)" : "#1a3a6b"}`,
+            borderRadius: 6,
+            padding: "4px 12px",
+            cursor: isActive ? "pointer" : "not-allowed",
+            letterSpacing: "0.12em",
+            transition: "all 0.2s",
+          }}
+        >
+          FLAT
+        </button>
       </div>
     </div>
   );

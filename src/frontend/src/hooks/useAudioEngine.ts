@@ -12,6 +12,10 @@ interface AudioEngineReturn {
   setBoosterGain: (v: number) => void;
   setCompressorThreshold: (v: number) => void;
   setPan: (v: number) => void;
+  bypassEQ: (bypass: boolean) => void;
+  bypassCompressor: (bypass: boolean) => void;
+  bypassBooster: (bypass: boolean) => void;
+  setEpicenterIntensity: (v: number) => void;
   currentTime: number;
   duration: number;
   isPlaying: boolean;
@@ -25,12 +29,14 @@ export function useAudioEngine(): AudioEngineReturn {
   const gainNodeRef = useRef<GainNode | null>(null);
   const boosterGainRef = useRef<GainNode | null>(null);
   const filtersRef = useRef<Record<string, BiquadFilterNode>>({});
+  const filterGainsRef = useRef<Record<string, number>>({});
   const analyserRef = useRef<AnalyserNode | null>(null);
   const compressorRef = useRef<DynamicsCompressorNode | null>(null);
   const pannerRef = useRef<StereoPannerNode | null>(null);
   const startTimeRef = useRef<number>(0);
   const pauseOffsetRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const boosterValueRef = useRef<number>(1.0);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -76,6 +82,7 @@ export function useAudioEngine(): AudioEngineReturn {
         f.gain.value = 0;
         if (type === "peaking") f.Q.value = 1;
         filtersRef.current[key] = f;
+        filterGainsRef.current[key] = 0;
         return f;
       },
     );
@@ -218,11 +225,13 @@ export function useAudioEngine(): AudioEngineReturn {
   }, []);
 
   const setFilterGain = useCallback((band: string, gainDb: number) => {
+    filterGainsRef.current[band] = gainDb;
     const f = filtersRef.current[band];
     if (f) f.gain.value = gainDb;
   }, []);
 
   const setBoosterGain = useCallback((v: number) => {
+    boosterValueRef.current = v;
     if (boosterGainRef.current) boosterGainRef.current.gain.value = v;
   }, []);
 
@@ -232,6 +241,51 @@ export function useAudioEngine(): AudioEngineReturn {
 
   const setPan = useCallback((v: number) => {
     if (pannerRef.current) pannerRef.current.pan.value = v;
+  }, []);
+
+  // Bypass EQ: when bypassed set all filter gains to 0; when restored apply stored gains
+  const bypassEQ = useCallback((bypass: boolean) => {
+    const filters = filtersRef.current;
+    const stored = filterGainsRef.current;
+    for (const key of Object.keys(filters)) {
+      const node = filters[key];
+      if (node) {
+        node.gain.value = bypass ? 0 : (stored[key] ?? 0);
+      }
+    }
+  }, []);
+
+  // Bypass compressor: when bypassed, ratio=1 & threshold=0 (unity/no compression)
+  const bypassCompressor = useCallback((bypass: boolean) => {
+    const c = compressorRef.current;
+    if (!c) return;
+    if (bypass) {
+      c.ratio.value = 1;
+      c.threshold.value = 0;
+    } else {
+      c.ratio.value = 12;
+      c.threshold.value = -24;
+    }
+  }, []);
+
+  // Bypass booster: bypass = unity gain; restore = stored value
+  const bypassBooster = useCallback((bypass: boolean) => {
+    if (boosterGainRef.current) {
+      boosterGainRef.current.gain.value = bypass
+        ? 1.0
+        : boosterValueRef.current;
+    }
+  }, []);
+
+  // Epicenter: bass boost 0-12dB based on 0-100 slider value
+  const setEpicenterIntensity = useCallback((v: number) => {
+    const bassKey = "bass";
+    const bassFilter = filtersRef.current[bassKey];
+    if (bassFilter) {
+      const epicBoost = (v / 100) * 12;
+      const storedBass = filterGainsRef.current[bassKey] ?? 0;
+      bassFilter.gain.value = storedBass + epicBoost;
+    }
   }, []);
 
   useEffect(() => {
@@ -253,6 +307,10 @@ export function useAudioEngine(): AudioEngineReturn {
     setBoosterGain,
     setCompressorThreshold,
     setPan,
+    bypassEQ,
+    bypassCompressor,
+    bypassBooster,
+    setEpicenterIntensity,
     currentTime,
     duration,
     isPlaying,
